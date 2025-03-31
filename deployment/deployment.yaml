@@ -18,7 +18,7 @@ spec:
       volumes:
       - name: ucm-pv-storage
         persistentVolumeClaim:
-          claimName: ucm-pv-claim
+          claimName: ucm-pv-claim-producer
       initContainers:
       - name: init
         image: busybox:1.28

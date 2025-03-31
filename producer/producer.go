@@ -223,9 +223,20 @@ func mainRun() {
 	}
 	producer := NewProducer(batchSize, inputDir, outputDir, eventQueue)
 	go func() {
+		username := os.Getenv("RABBITMQ_USER")
+		password := os.Getenv("RABBITMQ_PASSWORD")
+		host := os.Getenv("RABBITMQ_HOST")
+		port := os.Getenv("RABBITMQ_PORT")
+		url := fmt.Sprintf("amqp://%s:%s@%s:%s/", username, password, host, port)
+
+		conn, err := amqp.Dial(url)
+		failOnError(err, "Failed to connect to RabbitMQ")
+		defer conn.Close()
+
 		for event := range eventQueue {
-			log.Printf("Sent event with %d files\n", len(event.Files))
-			send(event)
+			fmt.Printf("Sent event with %d files\n", len(event.Files))
+			send(conn, event)
+			receive(conn)
 		}
 	}()
 	for {
@@ -245,16 +256,7 @@ func MoveFile(source, destination string) error {
 	return os.Rename(source, destination)
 }
 
-func send(event Event) {
-	username := os.Getenv("RABBITMQ_USER")
-	password := os.Getenv("RABBITMQ_PASSWORD")
-	host := os.Getenv("RABBITMQ_HOST")
-	port := os.Getenv("RABBITMQ_PORT")
-	url := fmt.Sprintf("amqp://%s:%s@%s:%s/", username, password, host, port)
-
-	conn, err := amqp.Dial(url)
-	failOnError(err, "Failed to connect to RabbitMQ")
-	defer conn.Close()
+func send(conn *amqp.Connection, event Event) {
 
 	ch, err := conn.Channel()
 	failOnError(err, "Failed to open a channel")
@@ -308,4 +310,66 @@ func exists(path string) (bool, error) {
 		return false, nil
 	}
 	return false, err
+}
+
+func receive(conn *amqp.Connection) {
+
+	ch, err := conn.Channel()
+	failOnError(err, "Failed to open a channel")
+	defer ch.Close()
+
+	q, err := ch.QueueDeclare(
+		"watcher", // name
+		true,      // durable
+		false,     // delete when unused
+		false,     // exclusive
+		false,     // no-wait
+		nil,       // arguments
+	)
+	failOnError(err, "Failed to declare a queue")
+	err = ch.Qos(
+		1,     // prefetch count
+		0,     // prefetch size
+		false, // global
+	)
+	failOnError(err, "Failed to set QoS")
+
+	msgs, err := ch.Consume(
+		q.Name, // queue
+		"",     // consumer
+		false,  // auto-ack
+		false,  // exclusive
+		false,  // no-local
+		false,  // no-wait
+		nil,    // args
+	)
+
+	failOnError(err, "Failed to register a consumer")
+
+	var forever chan struct{}
+	go func() {
+		for d := range msgs {
+			if filename, ok := d.Headers["filename"].(string); ok {
+				log.Printf("Received file: %s", filename)
+
+				// Write the file
+				err := os.WriteFile(filename, d.Body, 0644)
+				if err != nil {
+					log.Printf("Error writing file %s: %s", filename, err)
+				} else {
+					log.Printf("File saved to %s", filename)
+				}
+
+				// Acknowledge the message
+				d.Ack(false)
+			} else {
+				log.Println("Message missing filename header")
+				d.Nack(false, false)
+			}
+		}
+	}()
+
+	log.Printf(" [*] Waiting for messages. To exit press CTRL+C")
+	<-forever
+
 }

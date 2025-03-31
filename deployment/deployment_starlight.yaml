@@ -31,6 +31,8 @@ spec:
       containers:
       - image: rayc/ucm-processor
         name: starlight
+        securityContext:
+          privileged: true
         workingDir: /docker/starlight/STARLIGHTv04
         command: ["./bash_script2.sh"]
         volumeMounts:
@@ -38,6 +40,8 @@ spec:
           name: ucm-pv-storage
       - image: rayc/ucm-receiver
         name: eventreceiver
+        securityContext:
+          privileged: true
         volumeMounts:
         - mountPath: /starlight/
           name: ucm-pv-storage
@@ -58,3 +62,26 @@ spec:
           value: "/starlight/runtime/processlist.txt" 
         - name: OUTPUT_DIR
           value: "/starlight/data/output"
+      - image: <username>/ucm-watcher
+        name: ucm-watcher
+        securityContext:
+          privileged: true
+        volumeMounts:
+        - mountPath: /starlight/
+          name: ucm-pv-storage
+        env:
+        - name: RABBITMQ_USER
+          value: "guest"
+        - name: RABBITMQ_PASSWORD
+          value: "guest"
+        - name: RABBITMQ_HOST
+          value: "rabbitmq"
+        - name: RABBITMQ_PORT
+          value: "5672"
+        - name: INPUT_DIR
+          value: "/starlight/data/output"
+        - name: BATCH_SIZE
+          value: "5"
+        ports:
+        - containerPort: 5672
+        
