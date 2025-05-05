@@ -209,9 +209,12 @@ func (p *Producer) removeInFileFromBatch() {
 
 func mainRun() {
 	eventQueue := make(chan Event, 10)
-
+	fmt.Print("starting\n")
 	inputDir := os.Getenv("INPUT_DIR")
 	outputDir := os.Getenv("OUTPUT_DIR")
+	fmt.Print("dir\n")
+	fmt.Print(inputDir)
+	fmt.Print(outputDir)
 
 	if inputDir == "" || outputDir == "" {
 		log.Fatal("INPUT_DIR  and OUTPUT_DIR environment variables is required")
@@ -221,6 +224,8 @@ func mainRun() {
 	if err != nil {
 		log.Fatal("Failed to convert BATCH_SIZE to an integer")
 	}
+	fmt.Print(batchSize)
+
 	producer := NewProducer(batchSize, inputDir, outputDir, eventQueue)
 	go func() {
 		username := os.Getenv("RABBITMQ_USER")
@@ -274,6 +279,8 @@ func send(conn *amqp.Connection, event Event) {
 
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
+
+	fmt.Print("\nPublishing\n")
 
 	for _, f := range event.Files {
 		body := f.Content

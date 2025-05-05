@@ -1,7 +1,7 @@
 apiVersion: v1
 kind: PersistentVolume
 metadata:
-  name: ucm-pv-volume
+  name: ucm-pv-volume1
   labels:
     type: local
 spec:

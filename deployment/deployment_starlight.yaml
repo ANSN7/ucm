@@ -29,7 +29,7 @@ spec:
         - mountPath: /starlight/
           name: ucm-pv-storage
       containers:
-      - image: rayc/ucm-processor
+      - image: alnx551/starlight
         name: starlight
         securityContext:
           privileged: true
@@ -38,7 +38,7 @@ spec:
         volumeMounts:
         - mountPath: /starlight/
           name: ucm-pv-storage
-      - image: rayc/ucm-receiver
+      - image: alnx551/receiver
         name: eventreceiver
         securityContext:
           privileged: true

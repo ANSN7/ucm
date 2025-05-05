@@ -4,6 +4,7 @@ metadata:
   name: ucm-pv-claim
 spec:
   storageClassName: standard
+  volumeMode: Filesystem
   accessModes:
   - ReadWriteOnce
   resources:

@@ -29,7 +29,7 @@ spec:
         - mountPath: /starlight/
           name: ucm-pv-storage
       containers:
-      - image: rayc/ucm-producer
+      - image: alnx551/producer
         name: ucm-producer
         securityContext:
           privileged: true

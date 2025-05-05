@@ -1,0 +1,41 @@
+allowHostDirVolumePlugin: false
+allowHostIPC: false
+allowHostNetwork: false
+allowHostPID: false
+allowHostPorts: false
+allowPrivilegeEscalation: true
+allowPrivilegedContainer: false
+allowedCapabilities: null
+apiVersion: security.openshift.io/v1
+defaultAddCapabilities: null
+fsGroup:
+  type: MustRunAs 
+  ranges: 
+  - max: 6000
+    min: 5000
+kind: SecurityContextConstraints
+apiVersion: security.openshift.io/v1
+metadata:
+  name: scc-tutorial-scc
+priority: null
+runAsUser:
+  type: MustRunAsRange 
+  uidRangeMin: 1000
+  uidRangeMax: 2000
+seLinuxContext:
+  type: MustRunAs
+supplementalGroups:
+  type: MustRunAs 
+  ranges: 
+  - max: 6000
+    min: 5000
+users: []
+volumes:
+- configMap
+- csi
+- downwardAPI
+- emptyDir
+- ephemeral
+- persistentVolumeClaim
+- projected
+- secret
